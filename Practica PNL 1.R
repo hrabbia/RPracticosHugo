@@ -87,6 +87,27 @@ freq(top_50)
 
 #bigrams
 
+feminismos_bigram <- PNL2 %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% my_stopwords$word,
+         !word2 %in% my_stopwords$word) %>%
+  unite(bigram, word1, word2, sep = " ") %>%
+  count(bigram, sort = TRUE)
+
+feminismos_bigram_filtered <- PNL2 %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
+  count(bigram, sort = TRUE)  %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% my_stopwords$word,
+         !word2 %in% my_stopwords$word)
+
+
+feminismos_bigram_filtered  %>% top_n(10)
+
+
+#a partir de acá lo viejo de HUGO, que es lo que estaba mal:
+
 PNLbigrams <- PNL2 %>%
   unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
   count(bigram, sort = TRUE)
@@ -96,6 +117,12 @@ PNLbigrams <- PNL2 %>%
 PNLbigrams <- PNL2 %>%
   separate(bigram, c("word1", "word2"), sep = " ")
 
+PNLbigram1 <- PNL_bigram_united  %>%
+  unnest_tokens(bigram, col, token = "ngrams", n = 2) %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  filter(!word1 %in% my_stopwords$word,
+         !word2 %in% my_stopwords$word) %>%
+  count(word1, word2, sort = TRUE)
 
 PNLbigrams <- PNL2 %>%
   unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
@@ -111,12 +138,18 @@ filtered_PNL <- bigrams_separados %>%
 
 head(filtered_PNL)
 
+PNL_bigram_united <- filtered_PNL %>%
+  unite(bigram, word1, word2, sep = " ")
+
+PNL_bigram_united %>% top_n(50)
 
 
 united_PNLbigrams <- filtered_PNL %>%
   unite(bigram, word1, word2, sep = " ")
 
 united_PNLbigrams %>% top_n(20,n)
+
+#HASTA ACÁ llega el moco de HUGO...
 
 #trigrams
 
@@ -143,6 +176,9 @@ row(bigrams_separados)
 is.na(bigrams_separados)
 
 
+summary(feminismos_bigram_filtered)
+glimpse(feminismos_bigram_filtered)
+
 library(igraph)
 library(ggraph)
 set.seed(2017)
@@ -152,12 +188,13 @@ set.seed(2017)
 # a su vez solo voy a seleccionar los bigrams que tengan al menos 1000 frecuencias.
 
 
+
 feminismo <-  data.frame(word= c("feminismo", "feminismos", "feminista"))
 
-feminismo_bigrams <- bigrams_separados %>% 
+feminismo_bigrams <- feminismos_bigram_filtered %>% 
   filter(word1, word2 >= 1000, word1 %in% c("feminismo","feminismos","feminista"))
 
-feminismo_filtrado <- bigrams_separados %>%
+feminismo_filtrado <- feminismos_bigram_filtered %>%
   filter(!word1 %in% stop_words$word) %>%
   filter(!word2 %in% stop_words$word) %>%
   filter(n >= 1000) %>% 
@@ -173,18 +210,9 @@ ggraph(feminismo_filtrado, layout = "fr") +
   geom_node_point() +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1)
 
-#el problema es que la solución aún no es muy legible, por la cantidad de redes y nodos
-#aún aparecen mystopwords 
 
-ggraph2(feminismo_filtrado %>% 
-          filter(!word1 %in% c(my_stopwords$word)) %>% 
-          filter(!word2 %in% c(my_stopwords$word)) %>% 
-        filter(n >= 5) %>% 
-  graph_from_data_frame() %>% 
-  ggraph() +
-  geom_edge_link(arrow = arrow(type = "closed", length = unit(.075, "inches"))) +
-  geom_node_point() +
-  geom_node_text(aes(label = name), vjust = 1, hjust = 1) + 
-  theme_void()
+
+
+
 
   
